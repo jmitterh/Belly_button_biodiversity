@@ -111,7 +111,7 @@ function graph(select) {
 
         // Apply layout
         var layout1 = {
-            title: "Bar Graph"
+            title: `Top 10 UTO's for ID: ${select}`
         };
 
         // Render the plot to the div tag with id "bar"
@@ -144,7 +144,7 @@ function graph(select) {
 
         // Apply layout
         var layout2 = {
-            title: "Bubble Graph"
+            title: `Different microbial “species” (technically operational taxonomic units, OTUs) across the belly button, for sample ID: ${select}`
         };
 
         // Render the plot to the div tag with id "bubble"
