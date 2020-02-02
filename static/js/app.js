@@ -1,6 +1,6 @@
 // The function initializes the dropdown and the the optionChange to update all the graphs and data
-function dropdownInit() {
-    var data = d3.json("./samples.json").then((importData) => {
+function selectInit() {
+    d3.json("./samples.json").then((importData) => {
         var data = importData;
         //console.log(data)
         var names = data["names"];
@@ -11,19 +11,13 @@ function dropdownInit() {
                 .text(idList)
                 .property("value", idList);
         });
-
+        // Display default data 940
         var firstData = names[0];
         //console.log(firstData);
         metaData(firstData);
         graph(firstData);
+        gauge(firstData);
     });
-};
-
-
-// Function onchange is initiated when selection is selected from drop down
-function optionChanged(select) {
-    metaData(select);
-    graph(select);
 };
 
 
@@ -32,8 +26,6 @@ function metaData(select) {
     d3.json("./samples.json").then((importData) => {
         var data = importData;
         var metaData = data["metadata"];
-
-
 
         //Use filter() to pass selection as an argument
         var filterSelect = metaData.filter(data => data.id == select);
@@ -56,7 +48,7 @@ function metaData(select) {
 
 // Function for the OTU var and bubble graph
 function graph(select) {
-    var data = d3.json("./samples.json").then((importData) => {
+    d3.json("./samples.json").then((importData) => {
         var data = importData;
         var samples = data["samples"];
 
@@ -70,8 +62,6 @@ function graph(select) {
         var label = filterSelect[0].otu_labels;
         console.log(value);
 
-
-
         //////////////////////////////
         // build variable for bar graph
         var barId = id;
@@ -83,26 +73,35 @@ function graph(select) {
             return parseFloat(b.sample_values) - parseFloat(a.sample_values);
         });
 
-
-
         // Slice ordered variables
         barId = barId.slice(0, 10);
         barValue = barValue.slice(0, 10);
         barLabel = barLabel.slice(0, 10);
 
         // Reverse the array due to Plotly's defaults
+        // And to keep everything congruent
+        barId = barId.reverse();
         barValue = barValue.reverse();
+        barLabel = barLabel.reverse();
+
+        //Empty array to store new Label
+        yBar = [];
+
+        // Iterate through object to alter object label and store into array
+        Object.entries(barId).forEach(([k, v]) => {
+            //console.log(`otu_${v}`)
+            yBar.push(`OTU ${v}`);
+        });
 
 
-        console.log(barId);
-        console.log("sorted and sliced " + barValue)
+        console.log("bar ID: ", yBar);
+        //console.log("sorted and sliced: " + barValue)
 
         // Trace1 is for the Bar graph data
         var trace1 = {
             x: barValue,
-            y: `UTO_${barId}`,
-            text: barId,
-            name: "Testing",
+            y: yBar,
+            text: barLabel,
             type: "bar",
             orientation: "h"
         };
@@ -115,24 +114,24 @@ function graph(select) {
             title: "Bar Graph"
         };
 
-        // Render the plot to the div tag with id "plot"
+        // Render the plot to the div tag with id "bar"
         Plotly.newPlot("bar", barData, layout1);
 
 
         /////////////////////////////////////////////////
-        // Bubble Chart 
-        var xValues = id;
-        var yValues = value;
-        var textValues = label;
+        // Build variables for Bubble Chart 
+        var xBubble = id;
+        var yBubble = value;
+        var bubbleLabel = label;
 
         var mSize = value
-        var mClrs = id;
+        var mClrs = value;
 
-        // Trace1 is for the Bar graph data
+        // Trace1 is for the Bubble graph data
         var trace2 = {
-            x: xValues,
-            y: yValues,
-            text: textValues,
+            x: xBubble,
+            y: yBubble,
+            text: bubbleLabel,
             mode: 'markers',
             marker: {
                 size: mSize,
@@ -148,22 +147,77 @@ function graph(select) {
             title: "Bubble Graph"
         };
 
+        // Render the plot to the div tag with id "bubble"
         Plotly.newPlot("bubble", scatterData, layout2)
-
-
 
     });
 };
 
 
 // Function for the Belly Button Washing Freqency
-function washing() {
-    var data = d3.json("./samples.json").then((importData) => {
+function gauge(select) {
+    d3.json("./samples.json").then((importData) => {
         var data = importData;
-        var names = data["names"];
+        var metaData = data["metadata"];
 
+        //Use filter() to pass selection as an argument
+        var filterSelect = metaData.filter(data => data.id == select);
+        console.log("Gauge", filterSelect)
+
+        //Variable for washing frequency
+        var washingFreq = filterSelect[0].wfreq;
+
+        var data = [
+            {
+              type: "indicator",
+              mode: "gauge+number+delta",
+              value: washingFreq,// change value with washing freq
+              title: { text: "Belly Button Washing Frequency Per Week", font: { size: 24 } },
+              //delta: { reference: 0, increasing: { color: "RebeccaPurple" } },
+              gauge: {
+                axis: { range: [0, 9], tickwidth: 1, tickcolor: "darkblue" },
+                bar: { color: "darkblue" },
+                bgcolor: "white",
+                borderwidth: 2,
+                bordercolor: "gray",
+                steps: [
+                  { range: [0, 1], color: "cyan" },
+                  { range: [1, 2], color: "royalblue" },
+                  { range: [2, 3], color: "cyan" },
+                  { range: [3, 4], color: "royalblue" },
+                  { range: [4, 5], color: "cyan" },
+                  { range: [5, 6], color: "royalblue" },
+                  { range: [6, 7], color: "cyan" },
+                  { range: [7, 8], color: "royalblue" },
+                  { range: [8, 9], color: "cyan" }
+                ],
+                threshold: {
+                  line: { color: "red", width: 4 },
+                  thickness: 0.75,
+                  value: washingFreq
+                }
+              }
+            }
+          ];
+          
+          var layout = {
+            width: 500,
+            height: 400,
+            margin: { t: 25, r: 25, l: 25, b: 25 },
+            paper_bgcolor: "white",
+            font: { color: "darkblue", family: "Arial" }
+          };
+          
+          Plotly.newPlot('gauge', data, layout);
     });
-
 };
 
-dropdownInit();
+// Function onchange is initiated when selection is selected from drop down
+function optionChanged(select) {
+    metaData(select);
+    graph(select);
+    gauge(select)
+};
+
+// initializing function when site is up and running
+selectInit();
